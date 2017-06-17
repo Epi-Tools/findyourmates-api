@@ -3,23 +3,32 @@ const { mates } = require('../utils/config')
 const { get, set } = require('../utils/redisfn')
 
 const socket = () => {
-    //TODO: (carlendev) handle client deconnection
+    const connections = {}
+
     io.on('connection', client => {  
         console.log('client connected')
-
         client.on('join', data => {
-            //TODO: (carlendev) disconnect the client
-            if (data.name === undefined || data.room === undefined) return
+            if (data.name === undefined || data.room === undefined) {
+                delete connections[ client.id ]
+                return
+            }
             get(mates).then(e => {
                 const redisMate = JSON.parse(e)
-                if (!redisMate.length) data.id = 1
-                else {
-                    const id = e.id
-                    data.id = ++e.id
-                }
+                data.id = client.id
+                connections[ client.id ] = { socket: client, id: data.id }
                 redisMate.push(data)
                 set(mates, JSON.stringify(redisMate))
             })
+        })
+
+        client.on('disconnect', () => {
+            get(mates).then(e => {
+                const redisMate = JSON.parse(e)
+                const newRedisMate = redisMate.filter(e => e.id !== client.id)
+                set(mates, JSON.stringify(newRedisMate))
+            })
+            delete connections[ client.id ]
+            console.log('Client disconnected')
         })
     })
 }
