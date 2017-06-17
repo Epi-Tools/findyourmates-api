@@ -1,8 +1,8 @@
 const express = require('express')
 const router = express.Router()
-const matesInfo = require('../utils/matesInfo')
-const { sendJson } = require('../utils/sender')
+const { mates } = require('../utils/config')
+const { sendJson, saveRedisThenRes, getRedisThenRes } = require('../utils/response')
 
-router.get('/', (req, res) => sendJson(res.json.bind(res))(matesInfo))
+router.get('/', (_, res) => getRedisThenRes(res.json.bind(res))(mates))
 
 module.exports = router

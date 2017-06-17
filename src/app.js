@@ -3,6 +3,7 @@ const helmet = require('helmet')
 const roomsAPI = require('./api/rooms')
 const matesAPI = require('./api/mates')
 const bodyParser = require('body-parser')
+const { initializeRedis } = require('./utils/startup')
 const cors = require('cors')
 const _io = require('socket.io')
 
@@ -28,7 +29,11 @@ const handleError = err => {
     process.exit(1)
 }
 
-const listenServer = app.listen(PORT, err => err ? handleError(err) : wesh(`App listen to ${PORT}`))
-const io = _io(server)
-module.exports = { io }
-require('./socket/index')()
+initializeRedis()
+    .then(() => {
+        const listenServer = server.listen(PORT, err => err ? handleError(err) : wesh(`App listen to ${PORT}`))
+    const io = _io(server)
+    module.exports = { io }
+    require('./socket/index')()
+    })
+.catch(handleError)
